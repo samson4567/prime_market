@@ -1,0 +1,37 @@
+
+    {
+      "email": "john.doe@example.com",
+      "password": "password123",
+      "confirmPassword": "password123"
+    },
+    {
+      "email": "alice.smith@example.com",
+      "password": "securePassword1",
+      "confirmPassword": "securePassword1",
+    },
+    {
+      "email": "bob.johnson@example.com",
+      "password": "myPassword123",
+      "confirmPassword": "myPassword123",
+    },
+    {
+      "email": "mary.wilson@example.com",
+      "password": "mary12345",
+      "confirmPassword": "mary12345",
+    },
+    {
+      "email": "michael.brown@example.com",
+      "password": "brownPassword",
+      "confirmPassword": "brownPassword",
+    },
+    {
+      "email": "emily.jones@example.com",
+      "password": "jones123",
+      "confirmPassword": "jones123",
+    },
+    {
+      "email": "david.lee@example.com",
+      "password": "leePassword1",
+      "confirmPassword": "leePassword1",
+    },
+   

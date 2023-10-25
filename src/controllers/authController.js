@@ -1,88 +1,86 @@
 require("../models/database");
-const User = require("../models/user");
-const tokenUtils = require("../utils/authUtils");
+const User = require("../models/User");
 const argon2 = require("argon2");
+const { generateAccessToken } = require('../utils/authUtils');
+const { generateRefreshToken } = require('../utils/authUtils');
 
-// Controller for user signup
+
+
+// Controller for user sign-in
 exports.signupUser = async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { email, password, confirmedPassword } = req.body;
 
-    if (!email || !password || !confirmPassword) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
-    }
-
-    // Check if the email is already in use
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ error: "Email already in use" });
+      return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Validate the confirmed password field
+    if (password !== confirmedPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+      
+    }
+
+    // Hash the password using Argon2
     const hashedPassword = await argon2.hash(password);
 
+    // Create a new user
     const user = new User({
       email,
       password: hashedPassword,
+      
     });
 
+    // Save the user to the database
     await user.save();
 
-    return res.status(201).json({ message: "Signup successful" });
+    res.status(201).json({ success: true, data: user, message: 'User registration successful' });
   } catch (err) {
-    console.error("Error while signing up:", err);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while signing up" });
+    console.error(err);
+    res.status(400).json({ error: err.message, message: 'User registration failed' });
   }
-};
 
-// Controller for user sign-in
+}
+
 exports.signInUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "Both email and password are required" });
-    }
-
-    // Check if a user with the provided email exists
+    // Find the user by name
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res.status(401).json({ error: "Authentication failed" });
+      return res.status(401).json({ error: 'Invalid email!' });
     }
 
-    // Verify the password
-    const isPasswordValid = await user.verifyPassword(password);
-
+    // Compare the password using Argon2
+    const isPasswordValid = await argon2.verify(user.password, password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Authentication failed" });
+      return res.status(401).json({ error: 'Invalid password, Provide the correct Password!' });
     }
 
-    // Generate a JWT token
-    const token = tokenUtils.generateToken(
-      { userId: user._id, email: user.email },
-      "1h"
-    );
+    // Generate the access token and refresh token
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    // Return the token and a success message
-    return res.status(200).json({ message: "Sign-in successful", token });
+    // Send both tokens in the response
+    res.status(200).json({ success: true, accessToken, refreshToken, message:"Login Successful" });
   } catch (err) {
-    console.error("Error while signing in:", err);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while signing in" });
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
 
 // Controller for user logout
 exports.logoutUser = (req, res) => {
-    res.status(200).json({ message: 'Logout successful' });
+  try {
+    // Clear the token cookie
+    res.clearCookie('token');
+
+    res.status(200).json({ message: 'Logged out successfully! Thank You for using our Application' });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+    
 };
